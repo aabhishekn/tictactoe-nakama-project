@@ -1,0 +1,43 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: postgres-nakama
+    environment:
+      POSTGRES_USER: nakama
+      POSTGRES_PASSWORD: localdev
+      POSTGRES_DB: nakama
+    ports:
+      - "5432:5432"
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nakama -d nakama"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  nakama:
+    image: heroiclabs/nakama:3.22.0
+    container_name: nakama-server
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint:
+      - /nakama/nakama
+      - --name
+      - nakama
+      - --database.address
+      - postgres://nakama:localdev@postgres:5432/nakama?sslmode=disable
+      - --logger.level
+      - DEBUG
+    ports:
+      - "7350:7350"   # HTTP/gRPC
+      - "7351:7351"   # WebSocket
+    volumes:
+      - ./modules:/nakama/data/modules
+      - ./local:/nakama/data
+
+volumes:
+  dbdata:
