@@ -1,4 +1,3 @@
-version: "3.8"
 
 services:
   postgres:
@@ -25,13 +24,14 @@ services:
       postgres:
         condition: service_healthy
     entrypoint:
-      - /nakama/nakama
-      - --name
-      - nakama
-      - --database.address
-      - postgres://nakama:localdev@postgres:5432/nakama?sslmode=disable
-      - --logger.level
-      - DEBUG
+      - /bin/sh
+      - -ec
+      - |
+        /nakama/nakama migrate up --database.address "postgres://nakama:localdev@postgres:5432/nakama?sslmode=disable"
+        exec /nakama/nakama \
+          --name nakama \
+          --database.address "postgres://nakama:localdev@postgres:5432/nakama?sslmode=disable" \
+          --logger.level DEBUG
     ports:
       - "7350:7350"   # HTTP/gRPC
       - "7351:7351"   # WebSocket
